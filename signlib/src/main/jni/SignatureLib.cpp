@@ -51,18 +51,25 @@ void ByteToHexStr(const char *source, char *dest, int sourceLen) {
 }
 
 jstring mergeStr(JNIEnv *env, jstring strFist, jstring strLast) {
-    char mStr[280] = "";
+    char *mStr = new char[280];
     const char *cStrFist = env->GetStringUTFChars(strFist, 0);
     const char *cStrLast = env->GetStringUTFChars(strLast, 0);
     strcat(mStr, cStrFist);
     strcat(mStr, cStrLast);
     trim(mStr);
+
+    env->ReleaseStringUTFChars(strFist, cStrFist);
+    env->DeleteLocalRef(strFist);
+    env->ReleaseStringUTFChars(strLast, cStrLast);
+    env->DeleteLocalRef(strLast);
+    //--free(mStr);
+
     return (env)->NewStringUTF(mStr);
 }
 
 jstring encryptMD5ByAppSign(JNIEnv *env, jobject context, jstring str) {
     jstring sign = loadSignature(env, context);
-    char mStr[280] = "";
+    char *mStr = new char[280];
     const char *cStrFist = env->GetStringUTFChars(str, 0);
     const char *cStrLast = env->GetStringUTFChars(sign, 0);
     strcat(mStr, cStrFist);
@@ -70,6 +77,13 @@ jstring encryptMD5ByAppSign(JNIEnv *env, jobject context, jstring str) {
     trim(mStr);
     MD5 md5 = MD5(mStr);
     std::string md5Result = md5.hexdigest();
+
+    env->ReleaseStringUTFChars(str, cStrFist);
+    env->DeleteLocalRef(str);
+    env->ReleaseStringUTFChars(sign, cStrLast);
+    env->DeleteLocalRef(sign);
+    free(mStr);
+
     return env->NewStringUTF(md5Result.c_str());
 }
 
@@ -77,6 +91,10 @@ jstring encryptMD5ToString(JNIEnv *env, jstring str) {
     const char *cStr = env->GetStringUTFChars(str, 0);
     MD5 md5 = MD5(cStr);
     std::string md5Result = md5.hexdigest();
+
+    env->ReleaseStringUTFChars(str, cStr);
+    env->DeleteLocalRef(str);
+
     return env->NewStringUTF(md5Result.c_str());
 }
 
@@ -157,6 +175,13 @@ jstring loadSignature(JNIEnv *env, jobject context){
     mid = env->GetMethodID(cls, "toByteArray", "()[B");
     // 返回当前应用签名信息
     jbyteArray signatureByteArray = (jbyteArray) env->CallObjectMethod(signature, mid);
+
+    env->DeleteLocalRef(cls);
+    env->DeleteLocalRef(pm);
+    env->DeleteLocalRef(packageName);
+    env->DeleteLocalRef(packageInfo);
+    env->DeleteLocalRef(signatures);
+    env->DeleteLocalRef(signature);
 
     return ToMd5(env, signatureByteArray);
 }
