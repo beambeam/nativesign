@@ -50,31 +50,54 @@ void ByteToHexStr(const char *source, char *dest, int sourceLen) {
     }
 }
 
+void CreateNewStr(const char *src1, const char *src2, char *dest){
+    while(*src1 != '\0'){
+        *dest = *src1;
+        src1++;
+        dest++;
+    }
+    while(*src2 != '\0'){
+        *dest = *src2;
+        src2++;
+        dest++;
+    }
+    *dest = '\0';
+}
+
 jstring mergeStr(JNIEnv *env, jstring strFist, jstring strLast) {
-    char *mStr = new char[280];
+    //char *mStr = new char[280];
     const char *cStrFist = env->GetStringUTFChars(strFist, 0);
     const char *cStrLast = env->GetStringUTFChars(strLast, 0);
-    strcat(mStr, cStrFist);
-    strcat(mStr, cStrLast);
-    trim(mStr);
+    //strcat(mStr, cStrFist);
+    //strcat(mStr, cStrLast);
+    //trim(mStr);
+
+    int newStrLen = strlen(cStrFist) + strlen(cStrLast) + 1;
+    char *mStr = (char *)malloc(sizeof(char) * newStrLen);
+    CreateNewStr(cStrFist, cStrLast, mStr);
 
     env->ReleaseStringUTFChars(strFist, cStrFist);
     env->DeleteLocalRef(strFist);
     env->ReleaseStringUTFChars(strLast, cStrLast);
     env->DeleteLocalRef(strLast);
-    //--free(mStr);
+    //--free(mStr); mStr = NULL;
 
     return (env)->NewStringUTF(mStr);
 }
 
 jstring encryptMD5ByAppSign(JNIEnv *env, jobject context, jstring str) {
     jstring sign = loadSignature(env, context);
-    char *mStr = new char[280];
+    //char *mStr = new char[280];
     const char *cStrFist = env->GetStringUTFChars(str, 0);
     const char *cStrLast = env->GetStringUTFChars(sign, 0);
-    strcat(mStr, cStrFist);
-    strcat(mStr, cStrLast);
-    trim(mStr);
+    //strcat(mStr, cStrFist);
+    //strcat(mStr, cStrLast);
+    //trim(mStr);
+
+    int newStrLen = strlen(cStrFist) + strlen(cStrLast) + 1;
+    char *mStr = (char *)malloc(sizeof(char) * newStrLen);
+    CreateNewStr(cStrFist, cStrLast, mStr);
+
     MD5 md5 = MD5(mStr);
     std::string md5Result = md5.hexdigest();
 
@@ -82,7 +105,7 @@ jstring encryptMD5ByAppSign(JNIEnv *env, jobject context, jstring str) {
     env->DeleteLocalRef(str);
     env->ReleaseStringUTFChars(sign, cStrLast);
     env->DeleteLocalRef(sign);
-    free(mStr);
+    free(mStr); mStr = NULL;
 
     return env->NewStringUTF(md5Result.c_str());
 }
@@ -131,7 +154,7 @@ jstring ToMd5(JNIEnv *env, jbyteArray source) {
     // release
     env->ReleaseByteArrayElements(objArraySign, byte_array_elements, JNI_ABORT);
     // 释放指针使用free
-    free(char_result);
+    free(char_result); char_result = NULL;
     env->DeleteLocalRef(classMessageDigest);
     env->DeleteLocalRef(objMessageDigest);
 
@@ -185,6 +208,3 @@ jstring loadSignature(JNIEnv *env, jobject context){
 
     return ToMd5(env, signatureByteArray);
 }
-
-
-
